@@ -3,7 +3,7 @@
 import numpy
 import threading
 import FieldTrip
-
+import time
 
 
 class fieldline_phantom:
@@ -28,18 +28,26 @@ class fieldline_phantom:
         self.send_data_thread.start()
 
     def start(self):
-        self.send_data_flag_lock.acquire()
-        self.send_data_flag = True
-        self.send_data_flag_lock.release()
+        if self.ft_client.isConnected:
+            self.send_data_flag_lock.acquire()
+            self.send_data_flag = True
+            self.send_data_flag_lock.release()
+        else:
+            print("ft buffer not connected.")
 
     def stop(self):
-        self.send_data_flag_lock.acquire()
-        self.send_data_flag = False
-        self.send_data_flag_lock.release()
+        if self.ft_client.isConnected:        
+            self.send_data_flag_lock.acquire()
+            self.send_data_flag = False
+            self.send_data_flag_lock.release()
+        else:
+            print("ft buffer not connected.")
 
     def data_producer_routine(self):
         while True:
             if self.send_data_flag:
-                data = numpy.random.rand(self.num_samples, self.num_sensors).astype(numpy.float32)
-                self.ft_client.putData(data)
+                data = 1E-11 * numpy.random.rand(self.num_samples, self.num_sensors).astype(numpy.float32)
+                output = self.ft_client.putData(data)
+                print(output)
+            time.sleep(self.num_samples/self.sample_frequency)
 
